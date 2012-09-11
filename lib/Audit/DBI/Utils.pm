@@ -11,11 +11,11 @@ Audit::DBI::Utils - Utilities for the Audit::DBI distribution.
 
 =head1 VERSION
 
-Version 1.4.2
+Version 1.4.3
 
 =cut
 
-our $VERSION = '1.4.2';
+our $VERSION = '1.4.3';
 
 
 =head1 SYNOPSIS
@@ -135,7 +135,7 @@ sub _diff_structures
 	# make sure the provided equality function is really a coderef
 	if ( !Data::Validate::Type::is_coderef( $comparison_function ) )
 	{
-		if ( $comparison_function eq 'alsonumeric' )
+		if ( defined( $comparison_function ) && ( $comparison_function eq 'alsonumeric' ) )
 		{
 			$comparison_function = \&_diff_structures_equality_test_alsonumeric;
 		}
