@@ -19,11 +19,11 @@ Audit::DBI - Audit data changes in your code and store searchable log records in
 
 =head1 VERSION
 
-Version 1.4.0
+Version 1.4.1
 
 =cut
 
-our $VERSION = '1.4.0';
+our $VERSION = '1.4.1';
 
 
 =head1 SYNOPSIS
@@ -72,11 +72,11 @@ Parameters:
 
 =over 4
 
-=item * 'database handle'
+=item * database handle
 
 Mandatory, a DBI object.
 
-=item * 'memcache'
+=item * memcache
 
 Optional, a Cache::Memcached or Cache::Memcached::Fast object to use for
 rate limiting. If not specified, rate-limiting functions will not be available.
@@ -90,7 +90,9 @@ sub new
 	my ( $class, %args ) = @_;
 	my $dbh = delete( $args{'database_handle'} );
 	my $memcache = delete( $args{'memcache'} );
-
+	croak 'The following arguments are not valid: ' . join( ', ', keys %args )
+		if scalar( keys %args ) != 0;
+	
 	# Check parameters.
 	croak "Argument 'database_handle' is mandatory and must be a DBI object"
 		if !Data::Validate::Type::is_instance( $dbh, class => 'DBI::db' );
@@ -384,11 +386,26 @@ the time of the record() call.
 
 =back
 
+Optional parameters that are not search criteria:
+
+=over 4
+
+=item * database_handle
+
+A specific database handle to use when searching for audit events. This allows
+the use of a separate reader database for example, to do expensive search
+queries. If this parameter is omitted, then the database handle specified when
+calling new() is used.
+
+=back
+
 =cut
 
 sub review ## no critic (Subroutines::ProhibitExcessComplexity)
 {
 	my ( $self, %args ) = @_;
+	
+	# Retrieve search parameters.
 	my $subjects = delete( $args{'subjects'} );
 	my $values = delete( $args{'values'} );
 	my $ip_ranges = delete( $args{'ip_ranges'} );
@@ -396,6 +413,13 @@ sub review ## no critic (Subroutines::ProhibitExcessComplexity)
 	my $events = delete( $args{'events'} );
 	my $logged_in = delete( $args{'logged_in'} );
 	my $affected = delete( $args{'affected'} );
+	
+	# Check remaining parameters.
+	my $dbh = delete( $args{'database_handle'} );
+	croak "Argument 'database_handle' must be a DBI object when defined"
+		if defined( $dbh ) && !Data::Validate::Type::is_instance( $dbh, class => 'DBI::db' );
+	croak 'Invalid argument(s): ' . join( ', ', keys %args )
+		if scalar( keys %args ) != 0;
 	
 	### CLEAN PARAMETERS
 	
@@ -478,7 +502,8 @@ sub review ## no critic (Subroutines::ProhibitExcessComplexity)
 	### PREPARE THE QUERY
 	my @clause = ();
 	my @join = ();
-	my $dbh = $self->get_database_handle();
+	$dbh = $self->get_database_handle()
+		if !defined( $dbh );
 	
 	# Filter by IP range.
 	if ( defined( $ip_ranges ) )
@@ -656,7 +681,7 @@ sub create_tables
 	my ( $self, %args ) = @_;
 	my $drop_if_exist = delete( $args{'drop_if_exist'} );
 	croak 'Invalid argument(s): ' . join( ', ', keys %args )
-		if scalar( keys %args );
+		if scalar( keys %args ) != 0;
 	
 	# Defaults.
 	$drop_if_exist = 0
@@ -798,6 +823,8 @@ sub get_cache
 {
 	my ( $self, %args ) = @_;
 	my $key = delete( $args{'key'} );
+	croak 'Invalid argument(s): ' . join( ', ', keys %args )
+		if scalar( keys %args ) != 0;
 	
 	# Check parameters.
 	croak 'The parameter "key" is mandatory'
@@ -829,6 +856,8 @@ sub set_cache
 	my $key = delete( $args{'key'} );
 	my $value = delete( $args{'value'} );
 	my $expire_time = delete( $args{'expire_time'} );
+	croak 'Invalid argument(s): ' . join( ', ', keys %args )
+		if scalar( keys %args ) != 0;
 	
 	# Check parameters.
 	croak 'The parameter "key" is mandatory'
