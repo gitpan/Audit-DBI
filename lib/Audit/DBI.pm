@@ -19,11 +19,11 @@ Audit::DBI - Audit data changes in your code and store searchable log records in
 
 =head1 VERSION
 
-Version 1.4.3
+Version 1.5.0
 
 =cut
 
-our $VERSION = '1.4.3';
+our $VERSION = '1.5.0';
 
 
 =head1 SYNOPSIS
@@ -56,6 +56,38 @@ our $VERSION = '1.4.3';
 	my $audit_events = $audit->review(
 		[ search criteria ]
 	);
+
+
+=head1 FORCE OBJECT STRINGIFICATION
+
+When data structures are dumped (for diffs or to store information), it is
+sometimes desirable to turn some of the objects into strings, for two reasons:
+
+=over 4
+
+=item *
+
+First, two output strings can be the same even if the objects aren't, which is
+common when working with floats.
+
+=item *
+
+Second, the string version is easier to read than a dump of the object's
+internal variables.
+
+=back
+
+A good example of this is C<Math::Currency>. To convert those objects to
+strings, you can use the following:
+
+	local $Audit::DBI::Utils::FORCE_OBJECT_STRINGIFICATION =
+	{
+		'Math::Currency' => 'bstr',
+	};
+
+=cut
+
+our $FORCE_OBJECT_STRINGIFICATION = {};
 
 
 =head1 METHODS
@@ -915,7 +947,15 @@ sub insert_event
 			croak 'The "diff" argument cannot have more than two elements'
 				if scalar( @{ $data->{'diff'} } ) > 2;
 			
-			my $diff = Audit::DBI::Utils::diff_structures( @{ $data->{'diff'} } );
+			my $diff = Audit::DBI::Utils::diff_structures(
+				map
+				{
+					Audit::DBI::Utils::stringify_data_structure(
+						data_structure             => $_,
+						object_stringification_map => $FORCE_OBJECT_STRINGIFICATION,
+					);
+				} @{ $data->{'diff'} }
+			);
 			
 			$data->{'diff'} = defined( $diff )
 				? MIME::Base64::encode_base64(
@@ -932,8 +972,17 @@ sub insert_event
 		# Freeze the free-form data as soon as it is set on the object, in case it's
 		# a complex data structure with references that may be updated before the
 		# insert in the database.
-		$data->{'information'} = MIME::Base64::encode_base64( Storable::freeze( $data->{'information'} ) )
-			if defined( $data->{'information'} );
+		if ( defined( $data->{'information'} ) )
+		{
+			$data->{'information'} = MIME::Base64::encode_base64(
+				Storable::freeze(
+					Audit::DBI::Utils::stringify_data_structure(
+						data_structure             => $data->{'information'},
+						object_stringification_map => $FORCE_OBJECT_STRINGIFICATION,
+					)
+				)
+			);
+		}
 		
 		# Set defaults.
 		$data->{'created'} = time();
@@ -1059,6 +1108,9 @@ for them!
 
 Thanks to Nathan Gray (KOLIBRIE) for implementing rate limiting in record()
 calls in v1.3.0.
+
+Thanks to Kate Kirby (KATE) for pair-programming on the implementation of
+stringification feature in v1.5.0.
 
 
 =head1 COPYRIGHT & LICENSE
