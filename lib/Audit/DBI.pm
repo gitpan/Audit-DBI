@@ -19,11 +19,11 @@ Audit::DBI - Audit data changes in your code and store searchable log records in
 
 =head1 VERSION
 
-Version 1.5.0
+Version 1.5.1
 
 =cut
 
-our $VERSION = '1.5.0';
+our $VERSION = '1.5.1';
 
 
 =head1 SYNOPSIS
@@ -80,7 +80,7 @@ internal variables.
 A good example of this is C<Math::Currency>. To convert those objects to
 strings, you can use the following:
 
-	local $Audit::DBI::Utils::FORCE_OBJECT_STRINGIFICATION =
+	local $Audit::DBI::FORCE_OBJECT_STRINGIFICATION =
 	{
 		'Math::Currency' => 'bstr',
 	};
@@ -222,7 +222,7 @@ performance), subclass C<Audit::DBI> and add a custom C<insert_event()> method.
 
 sub record ## no critic (NamingConventions::ProhibitAmbiguousNames)
 {
-	my( $self, %args ) = @_;
+	my ( $self, %args ) = @_;
 	my $limit_rate_timespan = delete( $args{'limit_rate_timespan'} );
 	my $limit_rate_unique_key = delete( $args{'limit_rate_unique_key'} );
 	my $dbh = $self->get_database_handle();
@@ -723,7 +723,7 @@ sub create_tables
 	my $database_handle = $self->get_database_handle();
 	my $database_type = $database_handle->{'Driver'}->{'Name'};
 	croak 'This database type is not supported yet. Please email the maintainer of the module for help.'
-		if $database_type !~ m/^(?:SQLite|MySQL)$/;
+		if $database_type !~ m/^(?:SQLite|MySQL)$/i;
 	
 	# Create the table that will hold the audit records.
 	$database_handle->do( q|DROP TABLE IF EXISTS audit_events| )
@@ -765,7 +765,7 @@ sub create_tables
 					PRIMARY KEY  (audit_event_id),
 					KEY idx_event (event),
 					KEY idx_event_time (event_time),
-					KEY idx_ip_address (ip_address),
+					KEY idx_ipv4_address (ipv4_address),
 					KEY idx_file_line (file,line),
 					KEY idx_logged_in_account_id (logged_in_account_id(8)),
 					KEY idx_affected_account_id (affected_account_id(8)),
@@ -1110,7 +1110,7 @@ Thanks to Nathan Gray (KOLIBRIE) for implementing rate limiting in record()
 calls in v1.3.0.
 
 Thanks to Kate Kirby (KATE) for pair-programming on the implementation of
-stringification feature in v1.5.0.
+the stringification feature in v1.5.0.
 
 
 =head1 COPYRIGHT & LICENSE
