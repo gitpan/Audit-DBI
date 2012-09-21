@@ -14,11 +14,11 @@ Audit::DBI::Utils - Utilities for the Audit::DBI distribution.
 
 =head1 VERSION
 
-Version 1.5.1
+Version 1.5.2
 
 =cut
 
-our $VERSION = '1.5.1';
+our $VERSION = '1.5.2';
 
 
 =head1 SYNOPSIS
@@ -151,15 +151,35 @@ sub ipv4_to_integer
 
 Return the differences between the two data structures passed as parameter.
 
-If provided, the "equality_function" parameter provides a coderef to an
-alternative equality function for comparison of the scalars in the leaf nodes
-of the data structures. By default, 'eq' is used, but by providing a function
-that takes two parameters, diff_structures will perform any equality test.
+By default, if leaf nodes are compared with '==' if they are both numeric, and
+with 'eq' otherwise.
+
+An optional I<comparison_function> parameter can be used to specify a different
+comparison function.
 
 	my $differences = Audit::DBI::Utils::diff_structures(
 		$data_structure_1,
 		$data_structure_2,
-		comparison_function => sub { my ( $a, $b ) = @_; $a eq $b; }, #optional
+	);
+	
+	# Alternative built-in comparison function.
+	# Leaf nodes are compared using 'eq'.
+	my $diff = Audit::DBI::Utils::diff_structures(
+		$data_structure_1,
+		$data_structure_2,
+		comparison_function => 'eq',
+	);
+	
+	# Alternative custom comparison function.
+	my $diff = Audit::DBI::Utils::diff_structures(
+		$data_structure_1,
+		$data_structure_2,
+		comparison_function => sub
+		{
+			my ( $variable_1, $variable2 ) = @_;
+			# [...]
+			return $is_equal;
+		}
 	);
 
 =cut
@@ -173,23 +193,23 @@ sub diff_structures
 	);
 }
 
-sub _diff_structures_equality_test_default
+sub _diff_structures_comparison_eq
 {
 	my ( $variable_1, $variable_2 ) = @_;
+	
 	return $variable_1 eq $variable_2;
 }
 
-sub _diff_structures_equality_test_alsonumeric
+sub _diff_structures_comparison_default
 {
-	my ( $a, $b ) = @_;
-	if ( Scalar::Util::looks_like_number( $a )
-		&& Scalar::Util::looks_like_number( $b ) )
-	{
-		# for numbers, return numerical comparison
-		return $a == $b;
-	}
-	# otherwise, use exact string match
-	return $a eq $b;
+	my ( $variable_1, $variable_2 ) = @_;
+	
+	# For numbers, return numerical comparison.
+	return $variable_1 == $variable_2
+		if Scalar::Util::looks_like_number( $variable_1 ) && Scalar::Util::looks_like_number( $variable_2 );
+	
+	# Otherwise, use exact string match.
+	return $variable_1 eq $variable_2;
 }
 
 sub _diff_structures
@@ -200,13 +220,13 @@ sub _diff_structures
 	# make sure the provided equality function is really a coderef
 	if ( !Data::Validate::Type::is_coderef( $comparison_function ) )
 	{
-		if ( defined( $comparison_function ) && ( $comparison_function eq 'alsonumeric' ) )
+		if ( defined( $comparison_function ) && ( $comparison_function eq 'eq' ) )
 		{
-			$comparison_function = \&_diff_structures_equality_test_alsonumeric;
+			$comparison_function = \&_diff_structures_comparison_eq;
 		}
 		else
 		{
-			$comparison_function = \&_diff_structures_equality_test_default;
+			$comparison_function = \&_diff_structures_comparison_default;
 		}
 	}
 	
