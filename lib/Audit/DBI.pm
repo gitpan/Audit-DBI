@@ -19,11 +19,11 @@ Audit::DBI - Audit data changes in your code and store searchable log records in
 
 =head1 VERSION
 
-Version 1.5.2
+Version 1.5.3
 
 =cut
 
-our $VERSION = '1.5.2';
+our $VERSION = '1.5.3';
 
 
 =head1 SYNOPSIS
@@ -77,7 +77,7 @@ internal variables.
 
 =back
 
-A good example of this is C<Math::Currency>. To convert those objects to
+A good example of this is L<Math::Currency>. To convert those objects to
 strings, you can use the following:
 
 	local $Audit::DBI::FORCE_OBJECT_STRINGIFICATION =
@@ -226,7 +226,7 @@ Notes:
 =item *
 
 If you want to delay the insertion of audit events (to group them, for
-performance), subclass C<Audit::DBI> and add a custom C<insert_event()> method.
+performance), subclass L<Audit::DBI> and add a custom C<insert_event()> method.
 
 =item *
 
@@ -240,7 +240,7 @@ the data structures passed to diff, with the following syntax.
 			comparison_function => sub { ... },
 	]
 
-See C<Audit::DBI::Utils::diff_structures()> for more information on how to
+See C<diff_structures()> in L<Audit::DBI::Utils> for more information on how to
 write custom comparison functions.
 
 =back
@@ -1154,10 +1154,16 @@ the stringification feature in v1.5.0.
 
 Copyright 2012 Guillaume Aubert.
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of the Artistic License.
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License version 3 as published by the Free
+Software Foundation.
 
-See http://dev.perl.org/licenses/ for more information.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program. If not, see http://www.gnu.org/licenses/
 
 =cut
 

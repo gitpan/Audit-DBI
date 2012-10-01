@@ -13,7 +13,7 @@ configure_requires:
   Module::Build: 0
 dynamic_config: 1
 generated_by: 'Module::Build version 0.4003, CPAN::Meta::Converter version 2.120921'
-license: artistic
+license: open_source
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
@@ -21,23 +21,22 @@ name: Audit-DBI
 provides:
   Audit::DBI:
     file: lib/Audit/DBI.pm
-    version: v1.5.2
+    version: v1.5.3
   Audit::DBI::Event:
     file: lib/Audit/DBI/Event.pm
-    version: v1.5.2
+    version: v1.5.3
   Audit::DBI::TT2:
     file: lib/Audit/DBI/TT2.pm
-    version: v1.5.2
+    version: v1.5.3
   Audit::DBI::Utils:
     file: lib/Audit/DBI/Utils.pm
-    version: v1.5.2
+    version: v1.5.3
 requires:
   Carp: 0
   Data::Dumper: 0
   Data::Validate::Type: 0
   HTML::Entities: 0
   MIME::Base64: 0
-  Socket: 0
   Storable: 0
   Template::Plugin: 0
   Template::Stash: 0
@@ -46,6 +45,6 @@ requires:
 resources:
   bugtracker: http://rt.cpan.org/NoAuth/ReportBug.html?Queue=audit-dbi
   homepage: https://metacpan.org/release/Audit-DBI
-  license: http://www.perlfoundation.org/artistic_license_1_0
+  license: http://www.gnu.org/licenses/gpl-3.0.txt
   repository: https://github.com/guillaumeaubert/Audit-DBI
-version: v1.5.2
+version: v1.5.3

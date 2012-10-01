@@ -5,7 +5,7 @@ use Module::Build;
 
 my $builder = Module::Build->new(
 	module_name         => 'Audit::DBI',
-	license             => 'artistic',
+	license             => 'GPL_3',
 	dist_author         => q{Guillaume Aubert <aubertg@cpan.org>},
 	dist_version_from   => 'lib/Audit/DBI.pm',
 	build_requires      =>
@@ -25,7 +25,6 @@ my $builder = Module::Build->new(
 		'Data::Validate::Type' => 0,
 		'HTML::Entities'       => 0,
 		'MIME::Base64'         => 0,
-		'Socket'               => 0,
 		'Storable'             => 0,
 		'Template::Plugin'     => 0,
 		'Template::Stash'      => 0,
