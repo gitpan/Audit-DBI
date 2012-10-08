@@ -19,11 +19,11 @@ Audit::DBI - Audit data changes in your code and store searchable log records in
 
 =head1 VERSION
 
-Version 1.5.3
+Version 1.6.0
 
 =cut
 
-our $VERSION = '1.5.3';
+our $VERSION = '1.6.0';
 
 
 =head1 SYNOPSIS
@@ -276,7 +276,7 @@ sub record ## no critic (NamingConventions::ProhibitAmbiguousNames)
 			$self->set_cache(
 				key         => $limit_rate_unique_key,
 				value       => 1,
-				expire_time => time() + $limit_rate_timespan,
+				expire_time => $limit_rate_timespan,
 			);
 		}
 		else
@@ -750,14 +750,15 @@ sub create_tables
 	my $database_handle = $self->get_database_handle();
 	my $database_type = $database_handle->{'Driver'}->{'Name'};
 	croak 'This database type is not supported yet. Please email the maintainer of the module for help.'
-		if $database_type !~ m/^(?:SQLite|MySQL)$/i;
+		if $database_type !~ m/^(?:SQLite|mysql|Pg)$/x;
 	
-	# Create the table that will hold the audit records.
-	$database_handle->do( q|DROP TABLE IF EXISTS audit_events| )
-		if $drop_if_exist;
-	$database_handle->do(
-		$database_type eq 'SQLite'
-			? q|
+	# Database definitions.
+	my $tables_sql =
+	{
+		SQLite =>
+		{
+			audit_events =>
+			q|
 				CREATE TABLE audit_events (
 					audit_event_id INTEGER PRIMARY KEY AUTOINCREMENT,
 					logged_in_account_id varchar(48) default NULL,
@@ -773,8 +774,21 @@ sub create_tables
 					file varchar(32) NOT NULL default '',
 					line smallint(5) NOT NULL default '0'
 				)
-			|
-			: q|
+			|,
+			audit_search =>
+			q|
+				CREATE TABLE audit_search (
+					audit_search_id INTEGER PRIMARY KEY AUTOINCREMENT,
+					audit_event_id int(10) NOT NULL,
+					name varchar(48) default NULL,
+					value varchar(255) default NULL
+				)
+			|,
+		},
+		mysql  =>
+		{
+			audit_events =>
+			q|
 				CREATE TABLE audit_events (
 					audit_event_id int(10) unsigned NOT NULL auto_increment,
 					logged_in_account_id varchar(48) default NULL,
@@ -799,23 +813,9 @@ sub create_tables
 					KEY idx_subject (subject_type(6),subject_id(12))
 				)
 				ENGINE=InnoDB
-			|
-	);
-
-	# Create the table that will hold the audit search index.
-	$database_handle->do( q|DROP TABLE IF EXISTS audit_search| )
-		if $drop_if_exist;
-	$database_handle->do(
-		$database_type eq 'SQLite'
-			? q|
-				CREATE TABLE audit_search (
-					audit_search_id INTEGER PRIMARY KEY AUTOINCREMENT,
-					audit_event_id int(10) NOT NULL,
-					name varchar(48) default NULL,
-					value varchar(255) default NULL
-				)
-			|
-			: q|
+			|,
+			audit_search =>
+			q|
 				CREATE TABLE audit_search (
 					audit_search_id int(10) unsigned NOT NULL auto_increment,
 					audit_event_id int(10) unsigned NOT NULL,
@@ -827,9 +827,83 @@ sub create_tables
 					CONSTRAINT audit_event_id_ibfk_1 FOREIGN KEY (audit_event_id) REFERENCES audit_events (audit_event_id)
 				)
 				ENGINE=InnoDB
-			|
-	);
-
+			|,
+		},
+		Pg     =>
+		{
+			audit_events =>
+			q|
+				CREATE TABLE audit_events (
+					audit_event_id SERIAL,
+					logged_in_account_id VARCHAR(48) DEFAULT NULL,
+					affected_account_id VARCHAR(48) DEFAULT NULL,
+					event VARCHAR(48) DEFAULT NULL,
+					event_time INTEGER DEFAULT NULL,
+					subject_type VARCHAR(48) DEFAULT NULL,
+					subject_id VARCHAR(255) DEFAULT NULL,
+					diff TEXT,
+					information TEXT,
+					ipv4_address INTEGER DEFAULT NULL,
+					created INTEGER NOT NULL,
+					file VARCHAR(32) NOT NULL DEFAULT '',
+					line SMALLINT NOT NULL DEFAULT 0,
+					PRIMARY KEY (audit_event_id)
+				)
+			|,
+			audit_search =>
+			q|
+				CREATE TABLE audit_search (
+					audit_search_id SERIAL,
+					audit_event_id INTEGER NOT NULL REFERENCES audit_events (audit_event_id),
+					name VARCHAR(48) DEFAULT NULL,
+					value VARCHAR(255) DEFAULT NULL,
+					PRIMARY KEY (audit_search_id)
+				)
+			|,
+		},
+	};
+	
+	# Drop the tables in reverse order of their creation, to account for
+	# foreign key constraints.
+	if ( $drop_if_exist )
+	{
+		$database_handle->do( q|DROP TABLE IF EXISTS audit_search| )
+			|| croak 'Cannot execute SQL: ' . $database_handle->errstr();
+		$database_handle->do( q|DROP TABLE IF EXISTS audit_events| )
+			|| croak 'Cannot execute SQL: ' . $database_handle->errstr();
+	}
+	
+	# Create the table that will hold the audit records.
+	$database_handle->do( $tables_sql->{ $database_type }->{ 'audit_events' } )
+		|| croak 'Cannot execute SQL: ' . $database_handle->errstr();
+	
+	# Create the table that will hold the audit search index.
+	$database_handle->do( $tables_sql->{ $database_type }->{ 'audit_search' } )
+		|| croak 'Cannot execute SQL: ' . $database_handle->errstr();
+	
+	# Add indexes here if the database requires this to be a separate
+	# operation.
+	if ( $database_type eq 'Pg' )
+	{
+		my $indexes_sql =
+		[
+				q| CREATE INDEX idx_event ON audit_events (event) |,
+				q| CREATE INDEX idx_event_time ON audit_events (event_time) |,
+				q| CREATE INDEX idx_ipv4_address ON audit_events (ipv4_address) |,
+				q| CREATE INDEX idx_file_line ON audit_events (file, line) |,
+				q| CREATE INDEX idx_logged_in_account_id ON audit_events (logged_in_account_id) |,
+				q| CREATE INDEX idx_affected_account_id ON audit_events (affected_account_id) |,
+				q| CREATE INDEX idx_subject ON audit_events (subject_type, subject_id) |,
+				q| CREATE INDEX idx_name ON audit_search ( name ) |,
+				q| CREATE INDEX idx_value ON audit_search ( value ) |,
+		];
+		foreach my $index_sql ( @$indexes_sql )
+		{
+			$database_handle->do( $index_sql )
+				|| croak 'Cannot execute SQL: ' . $database_handle->errstr();
+		}
+	}
+	
 	return;
 }
 

@@ -5,9 +5,11 @@ use warnings;
 
 use Audit::DBI;
 use Config::Tiny;
-use DBI;
 use Test::More;
 use Test::Exception;
+
+use lib 't/';
+use LocalTest;
 
 
 # Verify if Cache::Memcached::Fast is installed.
@@ -31,17 +33,7 @@ plan( skip_all => 'Memcache is not running or configured on this machine, cannot
 # Memcache is ready to use, start testing.
 plan( tests => 10 );
 
-ok(
-	my $dbh = DBI->connect(
-		'dbi:SQLite:dbname=t/test_database',
-		'',
-		'',
-		{
-			RaiseError => 1,
-		}
-	),
-	'Create connection to a SQLite database.',
-);
+my $dbh = LocalTest::ok_database_handle();
 
 ok(
 	my $audit = Audit::DBI->new(
@@ -114,7 +106,7 @@ lives_ok(
 
 # Wait until cache expires.
 ok(
-	sleep( $limit_rate_timespan + 1 ),
+	sleep( $limit_rate_timespan + 2 ),
 	'Wait until the rate-limit time allows logging this event again.',
 );
 
@@ -169,6 +161,17 @@ is(
 	scalar( @$audit_events ),
 	2,
 	'Find only two records matching the three unique subject IDs.',
+)
+||
+diag(
+	explain(
+		{
+			audit_events_retrieved => $audit_events,
+			subject_a              => $limit_rate_subject_a,
+			subject_b              => $limit_rate_subject_b,
+			subject_c              => $limit_rate_subject_c,
+		}
+	)
 );
 
 # Verify that the random string for the first and last entry are found.
@@ -190,7 +193,7 @@ subtest(
 			"The subject ID >$limit_rate_subject_c< matches an event that was logged.",
 		);
 	},
-);
+) || diag( explain( $audit_events ) );
 
 # Verify that the random string for the middle entry is not found.
 subtest(
@@ -202,7 +205,7 @@ subtest(
 		is(
 			scalar( grep { $_->{'subject_id'} eq $limit_rate_subject_b } @$audit_events ),
 			0,
-			"The subject ID >$limit_rate_subject_c< matches no logged event.",
+			"The subject ID >$limit_rate_subject_b< matches no logged event.",
 		);
 	},
 );
