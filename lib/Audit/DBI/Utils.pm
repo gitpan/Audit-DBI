@@ -4,6 +4,8 @@ use strict;
 use warnings;
 
 use Carp;
+use Class::Load;
+use Data::Dumper;
 use Data::Validate::Type;
 
 
@@ -14,11 +16,11 @@ Audit::DBI::Utils - Utilities for the Audit::DBI distribution.
 
 =head1 VERSION
 
-Version 1.6.0
+Version 1.7.0
 
 =cut
 
-our $VERSION = '1.6.0';
+our $VERSION = '1.7.0';
 
 
 =head1 SYNOPSIS
@@ -33,6 +35,10 @@ our $VERSION = '1.6.0';
 		$data_structure_1,
 		$data_structure_2,
 		comparison_function => sub { my ( $a, $b ) = @_; $a eq $b; }, #optional
+	);
+	
+	my $diff_string_bytes = Audit::DBI::Utils::get_diff_string_bytes(
+		$differences
 	);
 
 
@@ -333,6 +339,223 @@ sub _diff_structures
 }
 
 
+=head2 get_diff_string_bytes()
+
+Return the size in bytes of the string differences. The argument must be a diff
+structure returned by C<Audit::DBI::Utils::diff_structures()>.
+
+This function has two modes:
+
+=over 4
+
+=item * Relative comparison (default):
+
+In this case, a string change from 'TestABC' to 'TestCDE' is a 0 bytes
+change (since there is the same number of characters).
+
+	my $diff_string_bytes = Audit::DBI::Utils::get_diff_string_bytes(
+		$diff_structure
+	);
+
+=item * Absolute comparison:
+
+In this case, a string change from 'TestABC' to 'TestCDE' is a 6 bytes
+change (3 characters removed, and 3 added).
+
+	my $diff_string_bytes = Audit::DBI::Utils::get_diff_string_bytes(
+		$diff_structure,
+		absolute => 1,
+	);
+
+Note that absolute comparison requires L<String::Diff> to be installed.
+
+=back
+
+=cut
+
+sub get_diff_string_bytes
+{
+	my ( $diff_structure, %args ) = @_;
+	
+	croak 'Cannot perform string comparison without String::Diff installed, please install first and then retry'
+		if $args{'absolute'} && !Class::Load::try_load_class( 'String::Diff' );
+	
+	return _get_diff_string_bytes(
+		{},
+		$diff_structure,
+		%args,
+	);
+}
+
+sub _get_diff_string_bytes
+{
+	my ( $cache, $diff_structure, %args ) = @_;
+	
+	return 0
+		if !defined( $diff_structure );
+	
+	# Cache memory addresses to make sure we don't get into an infinite loop.
+	# The idea comes from Test::Deep's code.
+	return undef
+		if exists( $cache->{ "$diff_structure" } );
+	$cache->{ "$diff_structure" } = undef;
+	
+	# A hash can mean that a hash had different keys, or this is a leaf node
+	# indicating old/new data.
+	if ( Data::Validate::Type::is_hashref( $diff_structure ) )
+	{
+		# If we have an 'old' and 'new' key, then it's a leaf node.
+		if ( exists( $diff_structure->{'new'} ) && exists( $diff_structure->{'old'} ) )
+		{
+			# If we're performing an absolute comparison, we need to add the data removed
+			# to the data added.
+			if ( $args{'absolute'} )
+			{
+				# If both structures are not strings, it means we can't inspect
+				# inside to do a finer grained comparison and we can only add their
+				# respective sizes.
+				return get_string_bytes( $diff_structure->{'new'} ) + get_string_bytes( $diff_structure->{'old'} )
+					if !Data::Validate::Type::is_string( $diff_structure->{'new'} )
+						|| !Data::Validate::Type::is_string( $diff_structure->{'old'} );
+				
+				# If both structures are strings however, then we can diff the
+				# strings to find out exactly how much has changed.
+				my $diff = String::Diff::diff_fully(
+					$diff_structure->{'old'},
+					$diff_structure->{'new'},
+				);
+				
+				my $diff_string_bytes = 0;
+				foreach my $line ( @{ $diff->[0] }, @{ $diff->[1] } )
+				{
+					if ( $line->[0] eq '+' )
+					{
+						$diff_string_bytes += get_string_bytes( $line->[1] );
+					}
+					elsif ( $line->[0] eq '-' )
+					{
+						$diff_string_bytes += get_string_bytes( $line->[1] );
+					}
+				}
+				return $diff_string_bytes;
+			}
+			# If we're performing a relative comparison, we substract the data removed
+			# from the data added.
+			else
+			{
+				return get_string_bytes( $diff_structure->{'new'} ) - get_string_bytes( $diff_structure->{'old'} );
+			}
+		}
+		# Otherwise, we need to explore inside the values.
+		else
+		{
+			my $diff_string_bytes = 0;
+			foreach my $value ( values %$diff_structure )
+			{
+				$diff_string_bytes += _get_diff_string_bytes( $cache, $value, %args );
+			}
+			return $diff_string_bytes;
+		}
+	}
+	
+	# If we have an array, loop through it.
+	if ( Data::Validate::Type::is_arrayref( $diff_structure ) )
+	{
+		my $diff_string_bytes = 0;
+		foreach my $element ( @$diff_structure )
+		{
+			$diff_string_bytes += _get_diff_string_bytes( $cache, $element, %args );
+		}
+		return $diff_string_bytes;
+	}
+	
+	# The above parses entirely a diff structure, if anything didn't match
+	# then the diff structure is not valid.
+	local $Data::Dumper::Terse = 1;
+	croak 'Invalid diff structure: ' . Dumper( $diff_structure );
+}
+
+
+=head2 get_string_bytes()
+
+Return the size in bytes of all the strings contained in the data structure
+passed as argument.
+
+	my $string_bytes = Audit::DBI::Utils::get_string_bytes( 'Test' );
+	
+	my $string_bytes = Audit::DBI::Utils::get_string_bytes(
+		[ 'Test1', 'Test2' ]
+	);
+	
+	my $string_bytes = Audit::DBI::Utils::get_string_bytes(
+		{ 'Test' => 1 }
+	);
+
+Note: this function is recursive, and will explore both arrayrefs and hashrefs.
+
+=cut
+
+sub get_string_bytes
+{
+	my ( $structure ) = @_;
+	
+	return _get_string_bytes(
+		{},
+		$structure,
+	);
+}
+
+
+sub _get_string_bytes
+{
+	my ( $cache, $structure ) = @_;
+	
+	return 0
+		if !defined( $structure );
+	
+	# Use bytes pragma to calculate the byte size of the strings correctly.
+	use bytes;
+	
+	# Strings allow ending the recursion.
+	if ( Data::Validate::Type::is_string( $structure ) )
+	{
+		return bytes::length( $structure );
+	}
+	
+	# Cache memory addresses to make sure we don't get into an infinite loop.
+	# If a loop is detected in the structure, we've counted the size of one
+	# cycle at this point and we'll ignore the others.
+	return 0 if defined( $cache->{ "$structure" } );
+	$cache->{ "$structure" } = 1;
+	
+	# For hashrefs, we calculate the size of the keys and the values.
+	if ( Data::Validate::Type::is_hashref( $structure ) )
+	{
+		my $size = 0;
+		foreach my $data ( keys %$structure, values %$structure )
+		{
+			$size += _get_string_bytes( $cache, $data );
+		}
+		return $size;
+	}
+	
+	# For arrayrefs, we calculate the size of each element.
+	if ( Data::Validate::Type::is_arrayref( $structure ) )
+	{
+		my $size = 0;
+		foreach my $data ( @$structure )
+		{
+			$size += _get_string_bytes( $cache, $data );
+		}
+		return $size;
+	}
+	
+	# If it's not a string, an array, or a hash, we can't retrieve strings
+	# from the data structure so we'll ignore it.
+	return 0;
+}
+
+
 =head1 AUTHOR
 
 Guillaume Aubert, C<< <aubertg at cpan.org> >>.
@@ -340,8 +563,8 @@ Guillaume Aubert, C<< <aubertg at cpan.org> >>.
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-audit-dbi at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Audit-DBI>.
+Please report any bugs or feature requests through the web interface at
+L<https://github.com/guillaumeaubert/Audit-DBI/issues/new>.
 I will be notified, and then you'll automatically be notified of progress on
 your bug as I make changes.
 
@@ -357,9 +580,9 @@ You can also look for information at:
 
 =over 4
 
-=item * RT: CPAN's request tracker
+=item * GitHub's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Audit-DBI>
+L<https://github.com/guillaumeaubert/Audit-DBI/issues>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
@@ -385,7 +608,7 @@ for them!
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2012 Guillaume Aubert.
+Copyright 2010-2013 Guillaume Aubert.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License version 3 as published by the Free

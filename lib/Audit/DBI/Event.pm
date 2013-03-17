@@ -15,11 +15,11 @@ Audit::DBI::Event - An event as logged by the Audit::DBI module.
 
 =head1 VERSION
 
-Version 1.6.0
+Version 1.7.0
 
 =cut
 
-our $VERSION = '1.6.0';
+our $VERSION = '1.7.0';
 
 
 =head1 SYNOPSIS
@@ -119,6 +119,50 @@ sub get_diff
 }
 
 
+=head2 get_diff_string_bytes()
+
+Return the size in bytes of all the text changes recorded inside the diff
+information stored for the event.
+
+This method can use two comparison types to calculate the size of the changes
+inside a diff:
+
+=over 4
+
+=item * Relative comparison (by default):
+
+In this case, a string change from 'TestABC' to 'TestCDE' is a 0 bytes
+change (since there is the same number of characters).
+
+	my $diff_bytes = $audit_event->get_diff_string_bytes();
+
+=item * Absolute comparison:
+
+In this case, a string change from 'TestABC' to 'TestCDE' is a 6 bytes
+change (3 characters removed, and 3 added).
+
+	my $diff_bytes = $audit_event->get_diff_string_bytes( absolute => 1 );
+
+Note that absolute comparison requires L<String::Diff> to be installed.
+
+=back
+
+=cut
+
+sub get_diff_string_bytes
+{
+	my ( $self, %args ) = @_;
+	
+	my $diff = $self->get_diff();
+	return 0 if !defined( $diff );
+	
+	return Audit::DBI::Utils::get_diff_string_bytes(
+		$diff,
+		%args,
+	);
+}
+
+
 =head2 get_ipv4_address()
 
 Return the IPv4 address associated with the audit event.
@@ -142,8 +186,8 @@ Guillaume Aubert, C<< <aubertg at cpan.org> >>.
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-audit-dbi at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Audit-DBI>.
+Please report any bugs or feature requests through the web interface at
+L<https://github.com/guillaumeaubert/Audit-DBI/issues/new>.
 I will be notified, and then you'll automatically be notified of progress on
 your bug as I make changes.
 
@@ -159,9 +203,9 @@ You can also look for information at:
 
 =over 4
 
-=item * RT: CPAN's request tracker
+=item * GitHub's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Audit-DBI>
+L<https://github.com/guillaumeaubert/Audit-DBI/issues>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
@@ -187,7 +231,7 @@ for them!
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2012 Guillaume Aubert.
+Copyright 2010-2013 Guillaume Aubert.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License version 3 as published by the Free

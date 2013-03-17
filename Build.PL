@@ -21,6 +21,7 @@ my $builder = Module::Build->new(
 	{
 		'perl'                 => 5.006,
 		'Carp'                 => 0,
+		'Class::Load'          => 0,
 		'Data::Dumper'         => 0,
 		'Data::Validate::Type' => 0,
 		'HTML::Entities'       => 0,
@@ -45,7 +46,7 @@ my $builder = Module::Build->new(
 		{
 			repository  => 'https://github.com/guillaumeaubert/Audit-DBI',
 			homepage    => 'https://metacpan.org/release/Audit-DBI',
-			bugtracker  => 'http://rt.cpan.org/NoAuth/ReportBug.html?Queue=audit-dbi',
+			bugtracker  => 'https://github.com/guillaumeaubert/Audit-DBI/issues',
 		},
 		no_index               =>
 		{
