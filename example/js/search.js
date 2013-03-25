@@ -1,5 +1,5 @@
 /**
- * Audit::DBI v1.7.0
+ * Audit::DBI v1.7.1
  * https://metacpan.org/release/Audit-DBI
  *
  * Copyright 2010-2013 Guillaume Aubert
@@ -53,6 +53,9 @@ function add_new_criteria(invert, criteria, values)
 		show_values_div($('#criteria .row:last'), criteria, values);
 	}
 	
+	// Set up the DatePicker fields for that row.
+	$("#row_" + count + " .datepicker").datepicker();
+	
 	// Add logic to display the different "values" DIVs based on the criteria
 	// selected.
 	$('#criteria .row:last .criteria select').bind(
@@ -95,10 +98,10 @@ function show_values_div(container, criteria, values)
 		container.find('.values_date_range').css('display', 'block');
 		var from = container.find('.values_date_range input:first');
 		from.val(value[0]);
-		from.datepick();
+		//from.datepicker();
 		var to = container.find('.values_date_range input:last');
 		to.val(value[1]);
-		to.datepick();
+		//to.datepicker();
 	
 	// Display subject type search.
 	} else if ( criteria == 'subject_type' ) {

@@ -3,8 +3,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 3;
 use Audit::DBI::Utils;
+use Test::More tests => 4;
+use Test::NoWarnings;
 
 
 # 'expected_relative' is the expected return value with absolute=0.
@@ -61,7 +62,7 @@ can_ok(
 );
 
 subtest(
-	'Test absolute diffs.',
+	'Test relative diffs.',
 	sub
 	{
 		plan( tests => scalar( @$tests ) );
@@ -77,22 +78,29 @@ subtest(
 	},
 );
 
-subtest(
-	'Test absolute diffs.',
-	sub
-	{
-		plan( tests => scalar( @$tests ) );
-		
-		foreach my $test ( @$tests )
+SKIP:
+{
+	eval "use String::Diff";
+	skip( 'String::Diff needs to be installed to test absolute diffs.', 1 )
+		if $@;
+	
+	subtest(
+		'Test absolute diffs.',
+		sub
 		{
-			is(
-				Audit::DBI::Utils::get_diff_string_bytes(
-					$test->{'diff'},
-					absolute => 1,
-				),
-				$test->{'expected_absolute'},
-				$test->{'name'},
-			);
-		}
-	},
-);
+			plan( tests => scalar( @$tests ) );
+			
+			foreach my $test ( @$tests )
+			{
+				is(
+					Audit::DBI::Utils::get_diff_string_bytes(
+						$test->{'diff'},
+						absolute => 1,
+					),
+					$test->{'expected_absolute'},
+					$test->{'name'},
+				);
+			}
+		},
+	);
+}

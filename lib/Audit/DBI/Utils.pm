@@ -16,11 +16,11 @@ Audit::DBI::Utils - Utilities for the Audit::DBI distribution.
 
 =head1 VERSION
 
-Version 1.7.0
+Version 1.7.1
 
 =cut
 
-our $VERSION = '1.7.0';
+our $VERSION = '1.7.1';
 
 
 =head1 SYNOPSIS
@@ -592,9 +592,9 @@ L<http://annocpan.org/dist/Audit-DBI>
 
 L<http://cpanratings.perl.org/d/Audit-DBI>
 
-=item * Search CPAN
+=item * MetaCPAN
 
-L<http://search.cpan.org/dist/Audit-DBI/>
+L<https://metacpan.org/release/Audit-DBI>
 
 =back
 
