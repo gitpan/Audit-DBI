@@ -9,7 +9,6 @@ META.json
 META.yml
 Makefile.PL
 README
-example/css/date-picker-prod.css
 example/css/images/animated-overlay.gif
 example/css/images/ui-bg_flat_0_aaaaaa_40x100.png
 example/css/images/ui-bg_flat_75_ffffff_40x100.png
@@ -26,7 +25,6 @@ example/css/images/ui-icons_888888_256x240.png
 example/css/images/ui-icons_cd0a0a_256x240.png
 example/css/jquery-ui-1.10.2.custom.css
 example/css/jquery-ui-1.10.2.custom.min.css
-example/css/jquery.datepick.css
 example/css/results.css
 example/css/search.css
 example/index.cgi
@@ -52,6 +50,7 @@ t/04-setup.t
 t/30-record.t
 t/40-review.t
 t/41-review-order_by.t
+t/42-review-values.t
 t/50-record-rate_limiting.t
 t/60-stringify_data_structure.t
 t/99-cleanup.t
@@ -73,9 +72,11 @@ t/Utils/30-integer_to_ipv4.t
 t/Utils/31-ipv4_to_integer.t
 t/Utils/45-get_string_bytes.t
 t/Utils/50-get_diff_string_bytes.t
+xt/changes.t
 xt/kwalitee.t
 xt/manifest.t
 xt/module_versions.t
 xt/perlcritic.t
 xt/pod-coverage.t
 xt/pod.t
+xt/unix_eol.t
