@@ -14,11 +14,8 @@ WriteMakefile
                    'Data::Dumper' => 0,
                    'Data::Validate::Type' => 0,
                    'File::Spec' => 0,
-                   'HTML::Entities' => 0,
                    'MIME::Base64' => 0,
                    'Storable' => 0,
-                   'Template::Plugin' => 0,
-                   'Template::Stash' => 0,
                    'Test::Exception' => 0,
                    'Test::FailWarnings' => 0,
                    'Test::More' => '0.94',
@@ -28,7 +25,7 @@ WriteMakefile
   'EXE_FILES' => [],
   'PL_FILES' => {},
   'test' => {
-              'TESTS' => 't/*.t t/TT2/*.t t/Event/*.t t/Utils/*.t'
+              'TESTS' => 't/*.t t/Event/*.t t/Utils/*.t'
             }
 )
 ;

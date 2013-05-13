@@ -41,11 +41,8 @@
             "Class::Load" : "0",
             "Data::Dumper" : "0",
             "Data::Validate::Type" : "0",
-            "HTML::Entities" : "0",
             "MIME::Base64" : "0",
             "Storable" : "0",
-            "Template::Plugin" : "0",
-            "Template::Stash" : "0",
             "Try::Tiny" : "0",
             "perl" : "5.006"
          }
@@ -58,10 +55,6 @@
       },
       "Audit::DBI::Event" : {
          "file" : "lib/Audit/DBI/Event.pm",
-         "version" : "v1.7.3"
-      },
-      "Audit::DBI::TT2" : {
-         "file" : "lib/Audit/DBI/TT2.pm",
          "version" : "v1.7.3"
       },
       "Audit::DBI::Utils" : {
