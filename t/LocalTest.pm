@@ -14,18 +14,18 @@ LocalTest - Test functions for L<Audit::DBI>.
 
 =head1 VERSION
 
-Version 1.8.1
+Version 1.8.2
 
 =cut
 
-our $VERSION = '1.8.1';
+our $VERSION = '1.8.2';
 
 
 =head1 SYNOPSIS
 
 	use lib 't/';
 	use LocalTest;
-	
+
 	my $dbh = LocalTest::ok_database_handle();
 
 
@@ -42,9 +42,9 @@ Verify that a database handle can be created, and return it.
 sub ok_database_handle
 {
 	$ENV{'AUDIT_DBI_DATABASE'} ||= 'dbi:SQLite:dbname=t/test_database||';
-	
+
 	my ( $database_dsn, $database_user, $database_password ) = split( /\|/, $ENV{'AUDIT_DBI_DATABASE'} );
-	
+
 	ok(
 		my $database_handle = DBI->connect(
 			$database_dsn,
@@ -56,10 +56,10 @@ sub ok_database_handle
 		),
 		'Create connection to a database.',
 	);
-	
+
 	my $database_type = $database_handle->{'Driver'}->{'Name'} || '';
 	note( "Testing $database_type database." );
-	
+
 	return $database_handle;
 }
 
@@ -109,7 +109,7 @@ L<https://metacpan.org/release/Audit-DBI>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2010-2013 Guillaume Aubert.
+Copyright 2010-2014 Guillaume Aubert.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License version 3 as published by the Free

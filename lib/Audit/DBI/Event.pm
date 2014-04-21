@@ -16,27 +16,27 @@ Audit::DBI::Event - An event as logged by the Audit::DBI module.
 
 =head1 VERSION
 
-Version 1.8.1
+Version 1.8.2
 
 =cut
 
-our $VERSION = '1.8.1';
+our $VERSION = '1.8.2';
 
 
 =head1 SYNOPSIS
 
 	use Audit::DBI::Event;
-	
+
 	my $audit_event = Audit::DBI::Event->new(
 		data => $data, #mandatory
 	);
-	
+
 	my $audit_event_id = $audit_event->get_id();
 	my $information = $audit_event->get_information();
 	my $diff = $audit_event->get_diff();
 	my $ipv4_address = $audit_event->get_ipv4_address();
 
-	
+
 =head1 METHODS
 
 =head2 new()
@@ -56,12 +56,12 @@ sub new
 {
 	my ( $class, %args ) = @_;
 	my $data = delete( $args{'data'} );
-	
+
 	croak 'The parameter "data" is mandatory'
 		if !defined( $data );
 	croak 'The parameter "data" must be a hashref'
 		if !Data::Validate::Type::is_hashref( $data );
-	
+
 	return bless( $data, $class );
 }
 
@@ -79,7 +79,7 @@ Return the audit event ID.
 sub get_id
 {
 	my ( $self ) = @_;
-	
+
 	return $self->{'audit_event_id'};
 }
 
@@ -95,7 +95,7 @@ Retrieve the extra information stored, if any.
 sub get_information
 {
 	my ( $self ) = @_;
-	
+
 	return defined( $self->{'information'} )
 		? Storable::thaw( MIME::Base64::decode_base64( $self->{'information'} ) )
 		: undef;
@@ -113,7 +113,7 @@ Retrieve the diff information stored, if any.
 sub get_diff
 {
 	my ( $self ) = @_;
-	
+
 	return defined( $self->{'diff'} )
 		? Storable::thaw( MIME::Base64::decode_base64( $self->{'diff'} ) )
 		: undef;
@@ -153,10 +153,10 @@ Note that absolute comparison requires L<String::Diff> to be installed.
 sub get_diff_string_bytes
 {
 	my ( $self, %args ) = @_;
-	
+
 	my $diff = $self->get_diff();
 	return 0 if !defined( $diff );
-	
+
 	return Audit::DBI::Utils::get_diff_string_bytes(
 		$diff,
 		%args,
@@ -175,14 +175,9 @@ Return the IPv4 address associated with the audit event.
 sub get_ipv4_address
 {
 	my ( $self ) = @_;
-	
+
 	return Audit::DBI::Utils::integer_to_ipv4( $self->{'ipv4_address'} );
 }
-
-
-=head1 AUTHOR
-
-Guillaume Aubert, C<< <aubertg at cpan.org> >>.
 
 
 =head1 BUGS
@@ -223,16 +218,15 @@ L<https://metacpan.org/release/Audit-DBI>
 =back
 
 
-=head1 ACKNOWLEDGEMENTS
+=head1 AUTHOR
 
-Thanks to ThinkGeek (L<http://www.thinkgeek.com/>) and its corporate overlords
-at Geeknet (L<http://www.geek.net/>), for footing the bill while I write code
-for them!
+L<Guillaume Aubert|https://metacpan.org/author/AUBERTG>,
+C<< <aubertg at cpan.org> >>.
 
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2010-2013 Guillaume Aubert.
+Copyright 2010-2014 Guillaume Aubert.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License version 3 as published by the Free

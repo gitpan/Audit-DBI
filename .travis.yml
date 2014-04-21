@@ -1,5 +1,6 @@
 language: perl
 perl:
+  - "5.19"
   - "5.16"
   - "5.10"
 services:
@@ -11,7 +12,12 @@ before_script:
   - cpanm --notest DBD::Pg
   - cpanm --notest DBD::mysql
   - cpanm --notest Cache::Memcached::Fast
+  - cpanm --notest String::Diff
 env:
   - AUDIT_DBI_DATABASE=''
   - AUDIT_DBI_DATABASE='DBI:mysql:database=audit_dbi;host=127.0.0.1|root|'
   - AUDIT_DBI_DATABASE='DBI:Pg:dbname=audit_dbi;host=127.0.0.1|postgres|'
+before_install:
+  cpanm -n Devel::Cover::Report::Coveralls
+script:
+  perl Build.PL && ./Build build && cover -test -report coveralls

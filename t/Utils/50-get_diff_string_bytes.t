@@ -4,8 +4,9 @@ use strict;
 use warnings;
 
 use Audit::DBI::Utils;
+use Test::Exception;
 use Test::FailWarnings -allow_deps => 1;
-use Test::More tests => 3;
+use Test::More tests => 4;
 
 
 # 'expected_relative' is the expected return value with absolute=0.
@@ -66,7 +67,7 @@ subtest(
 	sub
 	{
 		plan( tests => scalar( @$tests ) );
-		
+
 		foreach my $test ( @$tests )
 		{
 			is(
@@ -83,13 +84,13 @@ SKIP:
 	eval "use String::Diff";
 	skip( 'String::Diff needs to be installed to test absolute diffs.', 1 )
 		if $@;
-	
+
 	subtest(
 		'Test absolute diffs.',
 		sub
 		{
 			plan( tests => scalar( @$tests ) );
-			
+
 			foreach my $test ( @$tests )
 			{
 				is(
@@ -104,3 +105,15 @@ SKIP:
 		},
 	);
 }
+
+throws_ok(
+	sub
+	{
+		Audit::DBI::Utils::get_diff_string_bytes(
+			'invalid diff structure',
+			absolute => 0,
+		);
+	},
+	qr/Invalid diff structure/,
+	'Require a valid diff structure.',
+);

@@ -2,6 +2,7 @@ Audit-DBI
 ========
 
 [![Build Status](https://travis-ci.org/guillaumeaubert/Audit-DBI.png?branch=master)](https://travis-ci.org/guillaumeaubert/Audit-DBI)
+[![Coverage Status](https://coveralls.io/repos/guillaumeaubert/Audit-DBI/badge.png?branch=master)](https://coveralls.io/r/guillaumeaubert/Audit-DBI?branch=master)
 
 Audit data changes in your code and store searchable log records in a database.
 
@@ -25,6 +26,7 @@ perldoc command.
 
 	perldoc Audit::DBI
 
+
 You can also look for information at:
 
  * [GitHub's request tracker (report bugs here)]
@@ -43,7 +45,7 @@ You can also look for information at:
 LICENSE AND COPYRIGHT
 ---------------------
 
-Copyright (C) 2010-2013 Guillaume Aubert
+Copyright (C) 2010-2014 Guillaume Aubert
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License version 3 as published by the Free
